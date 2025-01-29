@@ -1,16 +1,55 @@
 // https://www.npmjs.com/package/node-fetch
-import fetch from 'node-fetch'
+import nodeFetch from 'node-fetch'
+import memoize from 'lodash.memoize'
+
+import { createHash, logger } from './utils.js'
 
 const DEFAULT_HOST = 'api-user.e2ro.com'
 const DEFAULT_PROTOCOL = 'https'
 const DEFAULT_PORT = false
 const DEFAULT_API_VERSION = '2.2'
-
 const SESSION_TOKEN_COOKIE_KEY = 's'
 
-function debug(...args) {
-  console.log(...args)
-}
+const STASH = Symbol('og')
+
+const memoizedFetch = memoize(
+  async (...args) => {
+    logger.debug('\n\n\n fetching \n\n\n')
+    const response = await nodeFetch(...args)
+    response[STASH] = {
+      text: await response.text(),
+    }
+    response.text = () => response[STASH].text
+
+    if (response[STASH].text) {
+      try {
+        response[STASH].json = JSON.parse(response[STASH].text)
+        response.json = () => response[STASH].json
+      } catch (err) {
+        logger.error(err)
+        // do nothing
+      }
+    }
+
+    response.json = () => response[STASH].json
+
+
+    return response
+  },
+  (url, options) => {
+    return createHash({ url, options })
+  }
+)
+
+const fetch = (
+  url,
+  {
+    useCache = true,
+    // setCache = true,
+    ...options
+  } = {},
+  ...rest
+) => (useCache ? memoizedFetch : nodeFetch)(url, options, ...rest)
 
 export class Client {
   constructor ({
@@ -84,7 +123,6 @@ export class Client {
     const {
       ok,
       data: {
-        // { user_token: '43569707|oshr7gpg59kbghes8g56m1odi9' }
         user_token: userToken,
       } = {},
       // response,
@@ -115,12 +153,12 @@ export class Client {
     } = {},
   ) {
 
-    // TODO: verify email/phone regex
+    // TODO: verify the code regex
     const {
       ok,
-      data,
-      response,
-      ...rest
+      // data,
+      // response,
+      // ...rest
     } = await this.post({
       path,
       data: {
@@ -128,13 +166,6 @@ export class Client {
       },
       cookies,
     })
-
-    debug('verifyLogin:', JSON.stringify({
-      ok,
-      data,
-      ...rest,
-      response,
-    }))
 
 
     if (!(ok)) {
@@ -151,23 +182,16 @@ export class Client {
   } = {}) {
     const {
       ok,
-      data,
+      // data,
       data: {
         user_token: userToken,
       } = {},
-      response,
-      ...rest
+      // response,
+      // ...rest
     } = await this.post({
       path,
       cookies,
     })
-
-    debug('loginRefresh:', JSON.stringify({
-      ok,
-      data,
-      ...rest,
-      response,
-    }))
 
     if (!(ok && userToken)) {
       // WTF?
@@ -183,6 +207,7 @@ export class Client {
 
   async get ({
     cookies,
+    useCache,
     ...buildUrlOptions
   } = {}) {
     const headers = {}
@@ -195,15 +220,16 @@ export class Client {
 
     const url = this.buildUrl(buildUrlOptions)
 
-    debug({
-      headers,
+    logger.debug('get:calling:', JSON.stringify({
       url,
-      buildUrlOptions,
-    })
+      useCache,
+      method: 'get',
+      headers,
+    }))
 
-    // return {}
 
     const response = await fetch(url, {
+      useCache,
       method: 'get',
       headers,
     })
@@ -214,7 +240,7 @@ export class Client {
       ...rest
     } = await response.json() || {}
 
-    debug('get result:', JSON.stringify({ meta, data: dataOut, ...rest }))
+    logger.debug('get:result:', JSON.stringify({ meta, data: dataOut, ...rest }))
 
     // this.handleSetCookies({ response })
 
@@ -239,6 +265,7 @@ export class Client {
     data: dataIn,
     isJson = dataIn?.constructor.name === 'Object',
     cookies,
+    useCache,
     ...buildUrlOptions
   }) {
 
@@ -256,13 +283,16 @@ export class Client {
 
     const body = typeof dataIn === 'string' ? dataIn : JSON.stringify(dataIn)
 
-    debug('url:', url)
-    debug('headers:', headers)
-    debug('body:', body)
-
-    // return {}
+    logger.debug('postOrPut:calling:', JSON.stringify({
+      url,
+      useCache,
+      method,
+      body,
+      headers,
+    }))
 
     const response = await fetch(url, {
+      useCache,
       method,
       body,
       headers,
@@ -274,7 +304,7 @@ export class Client {
       ...rest
     } = await response.json() || {}
 
-    debug('post result:', { meta, data: dataOut, ...rest })
+    logger.debug('post:response:', JSON.stringify({ meta, data: dataOut, ...rest }))
 
     this.handleSetCookies({ response })
 
@@ -341,18 +371,8 @@ export class Client {
       return null
     }
 
-    console.log({
-      getCookieHeader: true,
-      cookies,
-    })
-
     return Object.entries(cookies).reduce(
       (acc, [k, v]) => {
-        console.log({
-          k,
-          v,
-          acc,
-        })
         if (k && v) {
           acc.push(k + '=' + v)
         }
@@ -372,12 +392,6 @@ export class Client {
         }
       }
     }
-    console.log({
-      raw: response.headers.raw()['set-cookie'],
-      notRaw: response.headers,
-      gotten: response.headers.get('set-cookie'),
-      cookies: this.cookies,
-    })
   }
 
   setCookie (k, v) {
@@ -438,13 +452,8 @@ export class Client {
     if (typeof paths === 'string') {
       paths = [paths]
     }
-    return (paths || []).map(path => {
-      console.log({
-        path,
-        sani: this._sanitizePath(path),
-      })
-      return this._sanitizePath(path)
-    }).filter(Boolean)
+
+    return (paths || []).map(path => this._sanitizePath(path)).filter(Boolean)
   }
 
   _sanitizePath (path) {

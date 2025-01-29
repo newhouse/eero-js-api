@@ -2,8 +2,6 @@
 import { config } from '../dist/config.js'
 import { Client } from '../dist/client.js'
 
-console.log({Client})
-
 const {
   apiKey,
   // emailOrPhone,

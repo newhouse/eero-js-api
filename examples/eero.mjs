@@ -55,7 +55,13 @@ const eero = new Eero({
 // console.log('getForward:', JSON.stringify(forward))
 
 
-const enableForward = await eero.enableForward({
+let enableForward = await eero.enableForward({
+  networkId: networkUrlOrId,
+  forwardId,
+})
+console.log('enableForward:', JSON.stringify(enableForward))
+
+enableForward = await eero.enableForward({
   networkId: networkUrlOrId,
   forwardId,
 })

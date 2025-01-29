@@ -37,57 +37,59 @@ export class Eero {
 
   // GETS
 
-  async getAccount () {
-    return this.client.get({ path: 'account' })
+  async getAccount ({ useCache } = {}) {
+    return this.client.get({ path: 'account', useCache })
   }
 
-  async getNetworks () {
-    return this.client.get({ path: 'networks' })
+  async getNetworks ({ useCache } = {}) {
+    return this.client.get({ path: 'networks', useCache })
   }
 
-  async getNetwork (networkUrlOrId) {
-    const networkPath = getNetworkPath(networkUrlOrId)
+  async getNetwork ({ networkUrl, networkId, useCache }) {
+    const networkPath = getNetworkPath(networkUrl || networkId)
     if (!networkPath) {
       return false
     }
 
-    return this.client.get({ path: networkPath })
+    return this.client.get({ path: networkPath, useCache })
   }
 
-  async getDevices (networkUrlOrId) {
-    const networkPath = getNetworkPath(networkUrlOrId)
+  async getDevices ({ networkUrl, networkId, useCache }) {
+    const networkPath = getNetworkPath(networkUrl || networkId)
     if (!networkPath) {
       return false
     }
 
-    return this.client.get({ path: `${networkPath}/devices` })
+    return this.client.get({ path: `${networkPath}/devices`, useCache })
   }
 
-  async getEeros (networkUrlOrId) {
-    const networkPath = getNetworkPath(networkUrlOrId)
+  async getEeros ({ networkUrl, networkId, useCache }) {
+    const networkPath = getNetworkPath(networkUrl || networkId)
     if (!networkPath) {
       return false
     }
 
-    return this.client.get({ path: `${networkPath}/eeros` })
+    return this.client.get({ path: `${networkPath}/eeros`, useCache })
   }
 
   async getForwards ({
     networkUrl,
     networkId,
+    useCache,
   }) {
     const networkPath = getNetworkPath(networkId || networkUrl)
     if (!networkPath) {
       return false
     }
 
-    return this.client.get({ path: `${networkPath}/forwards` })
+    return this.client.get({ path: `${networkPath}/forwards`, useCache })
   }
 
   async getForward ({
     networkUrl,
     networkId,
     forwardId,
+    useCache,
   }) {
     if (!forwardId) {
       return false
@@ -100,6 +102,7 @@ export class Eero {
     const forwards = await this.getForwards({
       networkUrl,
       networkId,
+      useCache,
     })
 
     if (!(forwards.ok && Array.isArray(forwards.data))) {
@@ -138,6 +141,8 @@ export class Eero {
     networkId,
 
     forwardId,
+
+    useCache,
 
     ...rest
     // description,
@@ -181,11 +186,10 @@ export class Eero {
       }
     }
 
-    console.log('requiredData:', requiredData)
-
     return this.client.put({
       path: `${networkPath}/forwards/${forwardId}`,
       data: requiredData,
+      useCache,
     })
   }
 
@@ -216,12 +220,6 @@ function extractForwardId (networkUrlOrId) {
 }
 
 function extractId (networkUrlOrId, splitPattern) {
-  console.log({
-    extractId: true,
-    networkUrlOrId,
-    splitPattern,
-  })
-
   if (!networkUrlOrId) {
     return false
   }

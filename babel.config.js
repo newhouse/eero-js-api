@@ -1,4 +1,5 @@
 const config = {
+  retainLines: true,
   presets: [
     [
       // https://babeljs.io/docs/en/babel-preset-env#options
