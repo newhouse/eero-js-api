@@ -55,17 +55,19 @@ const eero = new Eero({
 // console.log('getForward:', JSON.stringify(forward))
 
 
-let enableForward = await eero.enableForward({
-  networkId: networkUrlOrId,
-  forwardId,
-})
-console.log('enableForward:', JSON.stringify(enableForward))
+// let enableForward = await eero.enableForward({
+//   networkId: networkUrlOrId,
+//   forwardId,
+//   useCache: true,
+// })
+// console.log('enableForward:', JSON.stringify(enableForward))
 
-enableForward = await eero.enableForward({
-  networkId: networkUrlOrId,
-  forwardId,
-})
-console.log('enableForward:', JSON.stringify(enableForward))
+// enableForward = await eero.enableForward({
+//   networkId: networkUrlOrId,
+//   forwardId,
+//   useCache: true,
+// })
+// console.log('enableForward:', JSON.stringify(enableForward))
 
 
 // const disableForward = await eero.disableForward({
@@ -73,6 +75,13 @@ console.log('enableForward:', JSON.stringify(enableForward))
 //   forwardId,
 // })
 // console.log('disableForward:', JSON.stringify(disableForward))
+
+
+const toggleForward = await eero.toggleForward({
+  networkId: networkUrlOrId,
+  forwardId,
+})
+console.log('toggleForward:', JSON.stringify(toggleForward))
 
 // const reboot = await eero.reboot()
 // console.log('reboot:', JSON.stringify(reboot))

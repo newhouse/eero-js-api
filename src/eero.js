@@ -1,4 +1,5 @@
 import config from './config.js'
+import { logger } from './utils.js'
 import { Client } from './client.js'
 
 export class Eero {
@@ -120,6 +121,21 @@ export class Eero {
     }
   }
 
+  async toggleForward (options) {
+    const forward = await this.getForward(options)
+    if (!forward) {
+      return false
+    }
+
+    logger.debug(`Forward ${forward.data.description} is ${forward.data.enabled ? '' : 'not '}enabled; ${!forward.data.enabled ? 'En' : 'Dis'}abling.`)
+
+    return this._xableForward({
+      ...options,
+      enabled: !forward.data.enabled,
+      forward,
+    })
+  }
+
   async enableForward (options) {
     return this._xableForward({
       ...options,
@@ -140,11 +156,12 @@ export class Eero {
     networkUrl,
     networkId,
 
-    forwardId,
+    forward,
+    forwardId = extractForwardId(forward?.data?.url),
 
-    useCache,
+    // useCache,
 
-    ...rest
+    ...restOfOptions
     // description,
     // clientPort,
     // gatewayPort,
@@ -162,7 +179,6 @@ export class Eero {
     const requiredData = {
       enabled,
     }
-    let forward
 
     for (const [propertyOptionName, propertyApiName] of [
       ['description', 'description'],
@@ -172,24 +188,29 @@ export class Eero {
       ['ip', 'ip'],
     ]) {
 
-      if (typeof rest[propertyOptionName] === 'undefined') {
+      if (typeof restOfOptions[propertyOptionName] === 'undefined') {
         forward ??= await this.getForward({
           networkId,
           networkUrl,
           forwardId,
         })
-        if (forward && typeof forward.data[propertyApiName] !== 'undefined') {
+
+        if (!forward) {
+          return false
+        }
+
+        if (typeof forward.data[propertyApiName] !== 'undefined') {
           requiredData[propertyApiName] = forward.data[propertyApiName]
         }
       } else {
-        requiredData[propertyApiName] = rest[propertyOptionName]
+        requiredData[propertyApiName] = restOfOptions[propertyOptionName]
       }
     }
 
     return this.client.put({
       path: `${networkPath}/forwards/${forwardId}`,
       data: requiredData,
-      useCache,
+      // useCache,
     })
   }
 

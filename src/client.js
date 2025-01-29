@@ -2,15 +2,24 @@
 import nodeFetch from 'node-fetch'
 import memoize from 'lodash.memoize'
 
+import config from './config.js'
 import { createHash, logger } from './utils.js'
 
-const DEFAULT_HOST = 'api-user.e2ro.com'
-const DEFAULT_PROTOCOL = 'https'
-const DEFAULT_PORT = false
-const DEFAULT_API_VERSION = '2.2'
-const SESSION_TOKEN_COOKIE_KEY = 's'
-
 const STASH = Symbol('og')
+
+const {
+  userAgent,
+  defaultHost,
+  defaultProtocol,
+  defaultPort,
+  defaultApiVersion,
+  sessionTokenCookieKey,
+} = config
+const HEADERS_BASE = {}
+if (userAgent) {
+  HEADERS_BASE['User-Agent'] = userAgent
+}
+Object.freeze(HEADERS_BASE)
 
 const memoizedFetch = memoize(
   async (...args) => {
@@ -44,7 +53,7 @@ const memoizedFetch = memoize(
 const fetch = (
   url,
   {
-    useCache = true,
+    useCache = false,
     // setCache = true,
     ...options
   } = {},
@@ -53,11 +62,11 @@ const fetch = (
 
 export class Client {
   constructor ({
-    protocol = DEFAULT_PROTOCOL,
-    host = DEFAULT_HOST,
-    port = DEFAULT_PORT,
+    protocol = defaultProtocol,
+    host = defaultHost,
+    port = defaultPort,
 
-    apiVersion = DEFAULT_API_VERSION,
+    apiVersion = defaultApiVersion,
     additionalPath,
 
     apiKey,
@@ -107,102 +116,8 @@ export class Client {
 
     if (options.apiKey) {
       this.cookies ??= {}
-      this.cookies[SESSION_TOKEN_COOKIE_KEY] = options.apiKey
+      this.cookies[sessionTokenCookieKey] = options.apiKey
     }
-  }
-
-
-  async initiateLogin (
-    emailOrPhone,
-    {
-      path = 'login',
-    } = {}
-  ) {
-
-    // TODO: verify email/phone regex
-    const {
-      ok,
-      data: {
-        user_token: userToken,
-      } = {},
-      // response,
-    } = await this.post({
-      path,
-      data: {
-        login: emailOrPhone,
-      }
-    })
-
-    if (!(ok && userToken)) {
-      // WTF?
-      return false
-    }
-
-    this.state.login ??= {}
-    // This userToken and the "s" cookie that gets set seem to be the same thing
-    this.state.login.userToken = userToken
-
-    return true
-  }
-
-  async verifyLogin (
-    code,
-    {
-      path = 'login/verify',
-      cookies,
-    } = {},
-  ) {
-
-    // TODO: verify the code regex
-    const {
-      ok,
-      // data,
-      // response,
-      // ...rest
-    } = await this.post({
-      path,
-      data: {
-        code,
-      },
-      cookies,
-    })
-
-
-    if (!(ok)) {
-      // WTF?
-      return false
-    }
-
-    return true
-  }
-
-  async loginRefresh ({
-    path = 'login/refresh',
-    cookies,
-  } = {}) {
-    const {
-      ok,
-      // data,
-      data: {
-        user_token: userToken,
-      } = {},
-      // response,
-      // ...rest
-    } = await this.post({
-      path,
-      cookies,
-    })
-
-    if (!(ok && userToken)) {
-      // WTF?
-      return false
-    }
-
-    this.state.login ??= {}
-    // This userToken and the "s" cookie that gets set seem to be the same thing
-    this.state.login.userToken = userToken
-
-    return true
   }
 
   async get ({
@@ -210,8 +125,7 @@ export class Client {
     useCache,
     ...buildUrlOptions
   } = {}) {
-    const headers = {}
-
+    const headers = Object.assign({}, HEADERS_BASE)
 
     const cookieHeader = this.getCookieHeader(cookies)
     if (cookieHeader) {
@@ -265,11 +179,10 @@ export class Client {
     data: dataIn,
     isJson = dataIn?.constructor.name === 'Object',
     cookies,
-    useCache,
+    // useCache, // Should this be allowed in a put/post? I don't think so.
     ...buildUrlOptions
   }) {
-
-    const headers = {}
+    const headers = Object.assign({}, HEADERS_BASE)
     if (isJson) {
       headers['Content-Type'] = 'application/json'
     }
@@ -285,14 +198,14 @@ export class Client {
 
     logger.debug('postOrPut:calling:', JSON.stringify({
       url,
-      useCache,
+      // useCache,
       method,
       body,
       headers,
     }))
 
     const response = await fetch(url, {
-      useCache,
+      // useCache,
       method,
       body,
       headers,
@@ -363,6 +276,117 @@ export class Client {
     //     highWaterMark: 16384
     //   }
     // }
+  }
+
+  async initiateLogin (
+    emailOrPhone,
+    {
+      path = 'login',
+      force,
+    } = {}
+  ) {
+
+    if (this.isLoggedIn() && !force) {
+      logger.warn('Client is already logged in')
+      return this.getUserToken()
+    }
+
+    // TODO: verify email/phone regex
+    const {
+      ok,
+      data: {
+        user_token: userToken,
+      } = {},
+      // response,
+    } = await this.post({
+      path,
+      data: {
+        login: emailOrPhone,
+      }
+    })
+
+    if (!(ok && userToken)) {
+      // WTF?
+      return false
+    }
+
+    this.state.login ??= {}
+    // This userToken and the "s" cookie that gets set seem to be the same thing
+    this.state.login.userToken = userToken
+
+    return userToken
+  }
+
+  isLoggedIn () {
+    return !!(this.getSessionTokenCookieValue() && this.getUserToken())
+  }
+
+  getSessionTokenCookieValue () {
+    this.cookies[sessionTokenCookieKey]
+  }
+
+  getUserToken () {
+    return this.state.login.userToken || false
+  }
+
+  async verifyLogin (
+    code,
+    {
+      path = 'login/verify',
+      cookies,
+    } = {},
+  ) {
+
+    // TODO: verify the code regex
+    const {
+      ok,
+      // data,
+      // response,
+      // ...rest
+    } = await this.post({
+      path,
+      data: {
+        code,
+      },
+      cookies,
+    })
+
+
+    if (!(ok)) {
+      // WTF?
+      return false
+    }
+
+    return true
+  }
+
+  async loginRefresh ({
+    path = 'login/refresh',
+    cookies,
+  } = {}) {
+    const {
+      ok,
+      // data,
+      data: {
+        user_token: userToken,
+      } = {},
+      // response,
+      // ...rest
+    } = await this.post({
+      path,
+      cookies,
+    })
+
+    if (!(ok && userToken)) {
+      // WTF?
+      return false
+    }
+
+    this.state.login ??= {}
+    // This userToken and the "s" cookie that gets set seem to be the same thing
+    this.state.login.userToken = userToken
+
+    return true
   }
 
   getCookieHeader (cookies = this.cookies) {
