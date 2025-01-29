@@ -16,6 +16,6 @@ You must have node installed along with npm.
 1. clone this repo
 2. npm install
 3. node sample.js
-    * if you want some debug messages: DEBUG=* node sample js
+    * if you want some debug messages: DEBUG=* node sample.js
 
 That should be enough to get you started. This was my first node app so I welcome feedback and contributions to make it better.

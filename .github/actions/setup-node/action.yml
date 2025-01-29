@@ -1,0 +1,23 @@
+## https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+name: 'Set Up Node on Runner'
+description: 'This will set up Node on a Github Actions runner'
+
+inputs:
+  github_token:
+    description: The Github token to be used for the private repo stuff
+    required: true
+
+outputs:
+  node-version:
+    value: ${{ steps.setup-node.outputs.node-version }}
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4
+      id: setup-node
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
