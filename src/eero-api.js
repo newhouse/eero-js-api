@@ -82,7 +82,7 @@ class Eero {
 				return
 			}
 			let url = `${apiEndpoint}${path}`;
-			let that = this
+			// let that = this
 			req({ url: url, jar: this.cookieJar, json:true, timeout: timeout},
 				(err, res, body) => {
 					if (err) {
@@ -146,8 +146,10 @@ class Eero {
 		let form = { 'login': identifier }
 		return this._post('login', form)
 			.then(res => {
+				console.log('form:', form)
+				console.log('res:', res)
 				return res
-			})
+			}, console.warn)
 	}
 
 	loginVerify(verificationCode) {
@@ -166,11 +168,11 @@ class Eero {
 
 	loginRefresh() {
 		return this._post('login/refresh')
-			.then(res => {
-				return res
-			})
-			.catch(reject => {
-				_logout()
+			// .then(res => {
+			// 	return res
+			// })
+			.catch(() => {
+				this.logout()
 			})
 	}
 

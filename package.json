@@ -1,9 +1,9 @@
 {
-  "author": "Bernie Bernstein",
-  "version": "0.0.2",
-  "description": "A wrapper for talking to eero mesh routers",
+  "author": "Chris Newhouse",
+  "version": "0.0.0",
+  "description": "A JS library for talking to Eero mesh routers via the Eero API",
   "license": "MIT",
-  "main": "eero-api.js",
+  "main": "index.js",
   "name": "eero-js-api",
   "keywords": [
     "eero",
@@ -11,25 +11,51 @@
     "eero api"
   ],
   "engines": {
-    "node": ">=0.12.0"
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "eslint './*.js' 'src/*.js' 'src/**/*.js' 'examples/*.js' 'examples/**/*.js' 'test/*.js' 'test/**/*.js'",
+    "lint:fix": "yarn lint --fix",
+    "lint:quiet": "yarn lint --quiet",
+    "lint:quiet:fix": "yarn lint:quiet --fix",
+    "script:dev": "NODE_ENV=development node",
+    "develop": "npm run compile -- --watch",
+    "clean": "rimraf dist",
+    "compile": "./node_modules/.bin/babel src --out-dir dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
   },
   "dependencies": {
     "debug": "^2.6.9",
     "fs": "0.0.1-security",
+    "node-fetch": "^3.3.2",
     "readline": "^1.3.0",
     "request": "^2.88.0",
     "tough-cookie-file-store": "^1.2.0"
   },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "devDependencies": {
+    "@babel/cli": "^7.26.4",
+    "@babel/core": "^7.26.7",
+    "@babel/eslint-parser": "^7.26.5",
+    "@babel/preset-env": "^7.26.7",
+    "@babel/register": "^7.25.9",
+    "@eslint/js": "^9.19.0",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.19.0",
+    "eslint-config-node": "^4.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^15.14.0",
+    "husky": ">=9",
+    "lint-staged": ">=15",
+    "rimraf": "^6.0.1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bbernstein/eero-js-api.git"
+    "url": "git+https://github.com/newhouse/eero-js-api.git"
   },
   "bugs": {
-    "url": "https://github.com/bbernstein/eero-js-api/issues"
+    "url": "https://github.com/newhouse/eero-js-api/issues"
   },
-  "homepage": "https://github.com/bbernstein/eero-js-api#readme"
+  "homepage": "https://github.com/newhouse/eero-js-api#readme"
 }
