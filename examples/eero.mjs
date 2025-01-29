@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { config } from '../dist/config.js'
 import { Eero } from '../dist/eero.js'
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { config } from '../dist/config.js'
 import { Client } from '../dist/client.js'
 
@@ -20,6 +21,7 @@ const client = new Client({
 })
 
 // console.log(client)
+
 async function initiateLogin (emailOrPhone) {
   console.log('initiateLogin:')
   const res = await client.initiateLogin(emailOrPhone)

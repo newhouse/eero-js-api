@@ -14,15 +14,15 @@
     "node": ">=20"
   },
   "scripts": {
-    "lint": "eslint './*.js' 'src/*.js' 'src/**/*.js' 'examples/*.js' 'examples/**/*.js' 'test/*.js' 'test/**/*.js'",
-    "lint:fix": "yarn lint --fix",
-    "lint:quiet": "yarn lint --quiet",
-    "lint:quiet:fix": "yarn lint:quiet --fix",
+    "lint": "eslint './*.js' './*.mjs' 'src/*.js' 'src/**/*.js' 'examples/**/*.*js'",
+    "lint:fix": "npm run lint --fix",
+    "lint:quiet": "npm run lint --quiet",
+    "lint:quiet:fix": "npm run lint:quiet --fix",
     "script:dev": "NODE_ENV=development node",
     "develop": "npm run compile -- --watch",
     "clean": "rimraf dist",
     "compile": "./node_modules/.bin/babel src --out-dir dist",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Need to write some tests\"",
     "prepare": "husky"
   },
   "dependencies": {

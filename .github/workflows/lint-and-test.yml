@@ -1,0 +1,75 @@
+name: CI Lint & Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# env:
+  # GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+  # TARBALL_PATH: test/e2e/anvilco-pkg-ai.tgz
+
+jobs:
+  prepare:
+    name: Prepare Everything
+    runs-on: ubuntu-latest
+
+    outputs:
+      build-node-version: ${{ steps.setup-node.outputs.node-version }}
+      e2e-cache-key: ${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ env.GITHUB_SHA }}
+
+    steps:
+      - name: Checkout the codez
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Node
+        id: setup-node
+        uses: ./.github/actions/setup-node
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+  lint:
+    needs: prepare
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the codez
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Node
+        id: setup-node
+        uses: ./.github/actions/setup-node
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Linter
+        if: ${{ success() }}
+        run: npm run lint:quiet
+
+  test:
+    needs: prepare
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the codez
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        id: setup-node
+        uses: ./.github/actions/setup-node
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: npm install
+      - run: npm test

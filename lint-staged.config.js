@@ -8,7 +8,6 @@ const micromatch = require('micromatch')
 const { scripts } = require('./package.json')
 
 module.exports = (allStagedFiles) => {
-  console.log('foooo')
   // The globs are centrally stored in the package.json, so we grab them from there
   // and do some processing
   const globs = scripts.lint.split('eslint ')[1].split(' ').map((glob) => {
@@ -22,14 +21,11 @@ module.exports = (allStagedFiles) => {
     return `**/${glob}`
   })
 
-  console.log('bar')
-
   const codeFiles = micromatch(allStagedFiles, globs).join(' ')
 
   if (!codeFiles.length) {
     return []
   }
 
-  console.log(`eslint --quiet --fix ${codeFiles}`)
   return [`eslint --quiet --fix ${codeFiles}`]
 }
